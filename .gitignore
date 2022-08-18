@@ -45,3 +45,4 @@ _deps
 
 .vscode
 reconstruction
+.DS_Store
