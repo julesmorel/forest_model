@@ -6,6 +6,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
+#include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/filters/passthrough.h>
 #include <pcl/common/common.h>
@@ -24,14 +25,18 @@ int main(int argc, char *argv[]){
   int minClusterSize=10;
   int maxClusterSize=1000;
   double minSize=2.0;
+  int meanK=16;
+  double stddevMulThresh=1.0;
 
-  if (argc == 7) {
+  if (argc == 9) {
     filenameIn = argv[1];
     directoryOut = argv[2];
     clusterTolerance = std::stod (argv[3]);
     minClusterSize = std::stoi (argv[4]);
     maxClusterSize = std::stoi (argv[5]);
     minSize = std::stod (argv[6]);
+    meanK = std::stoi (argv[7]);
+    stddevMulThresh = std::stod (argv[8]);
   }else{
     std::cout<<"Please specify a file to process"<<std::endl;
     exit(0);
@@ -57,9 +62,18 @@ int main(int argc, char *argv[]){
   pass.filter (pointsFiltered);
   std::cout<<"Wood point cloud: "<<pointsFiltered.size()<<" points"<<std::endl;
 
+  //Filtering the outliers to clean up the cloud in order to better separate the clusters
+  pcl::PointCloud<pcl::PointXYZI> ptsFilteredOutliers;
+  pcl::StatisticalOutlierRemoval<pcl::PointXYZI> sor;
+  sor.setInputCloud (pointsFiltered.makeShared());
+  sor.setMeanK (meanK);
+  sor.setStddevMulThresh (stddevMulThresh);
+  sor.filter (ptsFilteredOutliers);
+  std::cout<<pointsFiltered.size()-ptsFilteredOutliers.size()<<" points filtered (StatisticalOutlierRemoval)"<<std::endl;
+
   // Creating the KdTree object for the search method of the extraction
   pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI>);
-  tree->setInputCloud (pointsFiltered.makeShared());
+  tree->setInputCloud (ptsFilteredOutliers.makeShared());
 
   //Creating the clusters of points
   std::vector<pcl::PointIndices> cluster_indices;
@@ -68,7 +82,7 @@ int main(int argc, char *argv[]){
   ec.setMinClusterSize (minClusterSize);
   ec.setMaxClusterSize (maxClusterSize);
   ec.setSearchMethod (tree);
-  ec.setInputCloud (pointsFiltered.makeShared());
+  ec.setInputCloud (ptsFilteredOutliers.makeShared());
   ec.extract (cluster_indices);
 
   std::cout<<cluster_indices.size()<<" clusters detected"<<std::endl;
@@ -82,7 +96,7 @@ int main(int argc, char *argv[]){
     //check if the cluster is tall enough
     pcl::PointCloud<pcl::PointXYZI> pointsCluster;  
     for(int i=0;i<it->indices.size();i++){
-      pointsCluster.push_back(pointsFiltered.at(cluster_indices.at(idCluster).indices[i]));
+      pointsCluster.push_back(ptsFilteredOutliers.at(cluster_indices.at(idCluster).indices[i]));
     }
     pcl::PointXYZI minPt, maxPt;
     pcl::getMinMax3D (pointsCluster, minPt, maxPt);
@@ -93,7 +107,7 @@ int main(int argc, char *argv[]){
       std::ofstream outfile;
       outfile.open(filename, std::ios_base::app);
       for(int i=0;i<it->indices.size();i++){
-        pcl::PointXYZI currentPt = pointsFiltered.at(cluster_indices.at(idCluster).indices[i]);
+        pcl::PointXYZI currentPt = ptsFilteredOutliers.at(cluster_indices.at(idCluster).indices[i]);
         outfile <<currentPt.x<<" "<<currentPt.y<<" "<<currentPt.z<<std::endl;
       }
       clusterCounter++;
