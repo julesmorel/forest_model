@@ -7,8 +7,11 @@
 #include <pcl/point_cloud.h>
 
 #include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/segmentation/extract_clusters.h>
+#include <pcl/segmentation/region_growing.h>
 #include <pcl/filters/passthrough.h>
+#include <pcl/search/search.h>
+#include <pcl/search/kdtree.h>
+#include <pcl/features/normal_3d.h>
 #include <pcl/common/common.h>
 #include <pcl/filters/extract_indices.h>
 #include <boost/make_shared.hpp>
@@ -21,22 +24,24 @@
 
 int main(int argc, char *argv[]){
   std::string directoryOut,filenameIn;
-  double clusterTolerance = 1.;
+  double smoothnessThreshold = 45.;
+  double curvatureThreshold = 10.;
   int minClusterSize=10;
   int maxClusterSize=1000;
   double minSize=2.0;
   int meanK=16;
   double stddevMulThresh=1.0;
 
-  if (argc == 9) {
+  if (argc == 10) {
     filenameIn = argv[1];
     directoryOut = argv[2];
-    clusterTolerance = std::stod (argv[3]);
-    minClusterSize = std::stoi (argv[4]);
-    maxClusterSize = std::stoi (argv[5]);
-    minSize = std::stod (argv[6]);
-    meanK = std::stoi (argv[7]);
-    stddevMulThresh = std::stod (argv[8]);
+    smoothnessThreshold = std::stod (argv[3]);
+    curvatureThreshold = std::stod (argv[4]);
+    minClusterSize = std::stoi (argv[5]);
+    maxClusterSize = std::stoi (argv[6]);
+    minSize = std::stod (argv[7]);
+    meanK = std::stoi (argv[8]);
+    stddevMulThresh = std::stod (argv[9]);
   }else{
     std::cout<<"Please specify a file to process"<<std::endl;
     exit(0);
@@ -75,15 +80,27 @@ int main(int argc, char *argv[]){
   pcl::search::KdTree<pcl::PointXYZI>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZI>);
   tree->setInputCloud (ptsFilteredOutliers.makeShared());
 
-  //Creating the clusters of points
+  //Estimating the normals of the remaining points
   std::vector<pcl::PointIndices> cluster_indices;
-  pcl::EuclideanClusterExtraction<pcl::PointXYZI> ec;
-  ec.setClusterTolerance (clusterTolerance); 
-  ec.setMinClusterSize (minClusterSize);
-  ec.setMaxClusterSize (maxClusterSize);
-  ec.setSearchMethod (tree);
-  ec.setInputCloud (ptsFilteredOutliers.makeShared());
-  ec.extract (cluster_indices);
+  pcl::search::Search<pcl::PointXYZI>::Ptr treeN (new pcl::search::KdTree<pcl::PointXYZI>);
+  pcl::PointCloud <pcl::Normal>::Ptr normals (new pcl::PointCloud <pcl::Normal>);
+  pcl::NormalEstimation<pcl::PointXYZI, pcl::Normal> normal_estimator;
+  normal_estimator.setSearchMethod (treeN);
+  normal_estimator.setInputCloud (ptsFilteredOutliers.makeShared());
+  normal_estimator.setKSearch (10);
+  normal_estimator.compute (*normals);
+
+  //Creating the clusters of points
+  pcl::RegionGrowing<pcl::PointXYZI, pcl::Normal> reg;
+  reg.setMinClusterSize (minClusterSize);
+  reg.setMaxClusterSize (maxClusterSize);
+  reg.setSearchMethod (treeN);
+  reg.setNumberOfNeighbours (10);
+  reg.setInputCloud (ptsFilteredOutliers.makeShared());
+  reg.setInputNormals (normals);
+  reg.setSmoothnessThreshold (smoothnessThreshold / 180.0 * M_PI);
+  reg.setCurvatureThreshold (curvatureThreshold);
+  reg.extract (cluster_indices);
 
   std::cout<<cluster_indices.size()<<" clusters detected"<<std::endl;
 

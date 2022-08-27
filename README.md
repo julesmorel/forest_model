@@ -42,21 +42,22 @@ Some of the clusters may correspond to lower vegetation objects; those clusters 
 To cluster the point cloud, run the following command:
 
 ```bash
-./segment_terrain.sh INPUT_FILE OUTPUT_DIR CLUSTER_TOLERANCE MIN_CLUSTER_SIZE MAX_CLUSTER_SIZE MIN_SIZE MEAN_K STD_DEV_MUL_THRESH
+./segment_terrain.sh INPUT_FILE OUTPUT_DIR SOOMTHNESS_TOLERANCE CURVATURE_THRESHOLD MIN_CLUSTER_SIZE MAX_CLUSTER_SIZE MIN_SIZE MEAN_K STD_DEV_MUL_THRESH
 ```
 
 Where:
 
 * INPUT_FILE is an ASCII file containing points stored in the following format: X Y Z label (leaf label=0).
 * OUTPUT_DIR is the output directory where every tree point clouds will be stored.
-* CLUSTER_TOLERANCE is the spatial cluster tolerance.
+* SOOMTHNESS_TOLERANCE: If the deviation between points normals is less than the smoothness tolerance (in degrees) then they are suggested to be in the same cluster 
+* CURVATURE_THRESHOLD: if this curvature at the current point is less than the curvature threshold then the algorithm will continue the growth of the cluster using the newly added point.
 * MIN_CLUSTER_SIZE and MAX_CLUSTER_SIZE are the size limits of the clusters.
 * MIN_SIZE is the minimum size along the Z axis for a cluster to be considered.
 * MEAN_K and STD_DEV_MUL_THRESH are the number of neighbors to analyze for each point and the standard deviation multiplier.
 
 We usually use:
 ```bash
-./reconstruction INPUT_FILE OUTPUT_DIR 0.05 1000 1000000000 2.0 8 0.5
+./reconstruction INPUT_FILE OUTPUT_DIR 45. 10. 1000 1000000000 2.0 8 0.5
 ```
 
 ###	Adtree
