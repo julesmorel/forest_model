@@ -16,8 +16,8 @@
 #include <pcl/filters/extract_indices.h>
 #include <boost/make_shared.hpp>
 
-#include "util/pointCloudFileReader.h"
-#include "util/offsetManager.h"
+#include "../util/pointCloudFileReader.h"
+#include "../util/offsetManager.h"
 
 
 #include <sys/stat.h>
@@ -26,22 +26,14 @@ int main(int argc, char *argv[]){
   std::string directoryOut,filenameIn;
   double smoothnessThreshold = 45.;
   double curvatureThreshold = 10.;
-  int minClusterSize=10;
-  int maxClusterSize=1000;
+  int minClusterSize=1000;
+  int maxClusterSize=10000000000;
   double minSize=2.0;
-  int meanK=16;
-  double stddevMulThresh=1.0;
+  int meanK=8;
+  double stddevMulThresh=0.5;
 
-  if (argc == 10) {
+  if (argc == 2) {
     filenameIn = argv[1];
-    directoryOut = argv[2];
-    smoothnessThreshold = std::stod (argv[3]);
-    curvatureThreshold = std::stod (argv[4]);
-    minClusterSize = std::stoi (argv[5]);
-    maxClusterSize = std::stoi (argv[6]);
-    minSize = std::stod (argv[7]);
-    meanK = std::stoi (argv[8]);
-    stddevMulThresh = std::stod (argv[9]);
   }else{
     std::cout<<"Please specify a file to process"<<std::endl;
     exit(0);
@@ -90,47 +82,56 @@ int main(int argc, char *argv[]){
   normal_estimator.setKSearch (10);
   normal_estimator.compute (*normals);
 
-  //Creating the clusters of points
-  pcl::RegionGrowing<pcl::PointXYZI, pcl::Normal> reg;
-  reg.setMinClusterSize (minClusterSize);
-  reg.setMaxClusterSize (maxClusterSize);
-  reg.setSearchMethod (treeN);
-  reg.setNumberOfNeighbours (10);
-  reg.setInputCloud (ptsFilteredOutliers.makeShared());
-  reg.setInputNormals (normals);
-  reg.setSmoothnessThreshold (smoothnessThreshold / 180.0 * M_PI);
-  reg.setCurvatureThreshold (curvatureThreshold);
-  reg.setSmoothModeFlag(true);
-  reg.setCurvatureTestFlag(true);
-  reg.extract (cluster_indices);
+  //Optimization parameters
+  double smoothnessMin = 0.;
+  double smoothnessMax = 0.;
+  double smoothnessStep = 2.;
 
-  std::cout<<cluster_indices.size()<<" clusters detected"<<std::endl;
+  double curvatureMin = 0.0;
+  double curvatureMax = 1.0;
+  double curvatureStep = 0.05;
 
-  //Saving the clusters as point clouds in the given directory
-  int clusterCounter=0;
-  for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
-  {
-    int idCluster = it-cluster_indices.begin();
+  //for(int m=0;m<(int)((smoothnessMax-smoothnessMin)/smoothnessStep);m++){
+    for(int n=0;n<(int)((curvatureMax-curvatureMin)/curvatureStep);n++){
+        //double smoothness=smoothnessMin+m*smoothnessStep;
+        double curvature=curvatureMin+n*curvatureStep;
 
-    //check if the cluster is tall enough
-    pcl::PointCloud<pcl::PointXYZI> pointsCluster;  
-    for(int i=0;i<it->indices.size();i++){
-      pointsCluster.push_back(ptsFilteredOutliers.at(cluster_indices.at(idCluster).indices[i]));
+        pcl::RegionGrowing<pcl::PointXYZI, pcl::Normal> reg;
+        reg.setMinClusterSize (minClusterSize);
+        reg.setMaxClusterSize (maxClusterSize);
+        reg.setSearchMethod (treeN);
+        reg.setNumberOfNeighbours (10);
+        reg.setInputCloud (ptsFilteredOutliers.makeShared());
+        reg.setInputNormals (normals);
+        //reg.setSmoothnessThreshold (smoothness / 180.0 * M_PI);
+        reg.setCurvatureThreshold (curvature);
+        reg.setSmoothModeFlag(false);
+        reg.setCurvatureTestFlag(true);
+        reg.extract (cluster_indices);
+        
+        int clusterCounter=0;
+        int clusterNb=0;
+        for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
+        {
+            int idCluster = it-cluster_indices.begin();
+            //check if the cluster is tall enough
+            pcl::PointCloud<pcl::PointXYZI> pointsCluster;  
+            for(int i=0;i<it->indices.size();i++){
+              pointsCluster.push_back(ptsFilteredOutliers.at(cluster_indices.at(idCluster).indices[i]));
+            }
+            pcl::PointXYZI minPt, maxPt;
+            pcl::getMinMax3D (pointsCluster, minPt, maxPt);
+            double deltaZ = maxPt.z - minPt.z;
+            if(deltaZ>minSize){     
+                clusterCounter+=pointsCluster.size();
+                clusterNb++;
+            }
+        }
+        double ratio=((double)clusterCounter)/((double)pointsFiltered.size());
+        std::string filename = "optimResult.txt";
+        std::ofstream outfile;
+        outfile.open(filename, std::ios_base::app);
+        outfile <<curvature<<" "<<ratio<<" "<<clusterNb<<std::endl;
     }
-    pcl::PointXYZI minPt, maxPt;
-    pcl::getMinMax3D (pointsCluster, minPt, maxPt);
-    double deltaZ = maxPt.z - minPt.z;
-
-    if(deltaZ>minSize){     
-      std::string filename = directoryOut + "/tree_" + std::to_string(idCluster) + ".xyz";
-      std::ofstream outfile;
-      outfile.open(filename, std::ios_base::app);
-      for(int i=0;i<it->indices.size();i++){
-        pcl::PointXYZI currentPt = ptsFilteredOutliers.at(cluster_indices.at(idCluster).indices[i]);
-        outfile <<currentPt.x<<" "<<currentPt.y<<" "<<currentPt.z<<std::endl;
-      }
-      clusterCounter++;
-    }
-  }
-  std::cout<<clusterCounter<<" tree clusters saved"<<std::endl;
+  //}
 }

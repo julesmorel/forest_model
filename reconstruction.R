@@ -13,6 +13,7 @@ if (length(args)!=2) {
 listInputFiles = list.files(inDir)
 
 for (file in listInputFiles) {
+  print(file)
   tryCatch(
     expr = {
       input = paste(inDir, fsep = .Platform$file.sep, file, sep = "")
@@ -31,7 +32,6 @@ for (file in listInputFiles) {
       rgl::close3d()
     },
     error = function(e){ 
-      print(file)
       print(e)
     },
     warning = function(w){
