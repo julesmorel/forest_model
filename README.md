@@ -64,7 +64,7 @@ We usually use:
 
 This package contains 3 reconstruction methods designed to produce 3D mesh models from individual scanned trees.  
 
-**AdTree**
+[**AdTree**]
 
 First, compile AdTree by running the following command:
 ```bash
@@ -82,7 +82,7 @@ Once the input point cloud has been clustered, simply call Adtree in batch mode:
 * INPUT_DIR is the directory where every tree point clouds are stored.
 * OUTPUT_DIR is the directory containing the resulting tree mockups.
 
-**TreeQSM**
+[**TreeQSM**]
 
 To use TreeQSM, call in Matlab the function `run.m` as follow:
 ```bash
@@ -97,7 +97,7 @@ For instance, one can run:
 run("~/GEDI/GEDI008/ascii/*.xyz","~/GEDI/GEDI008/qsm/")
 ```
 
-**aRchi**
+[**aRchi**]
 
 To use aRchi, run the following command:
 ```bash
