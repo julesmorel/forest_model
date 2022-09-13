@@ -91,9 +91,9 @@ int main(int argc, char *argv[]){
   double curvatureMax = 1.0;
   double curvatureStep = 0.05;
 
-  //for(int m=0;m<(int)((smoothnessMax-smoothnessMin)/smoothnessStep);m++){
+  for(int m=0;m<(int)((smoothnessMax-smoothnessMin)/smoothnessStep);m++){
     for(int n=0;n<(int)((curvatureMax-curvatureMin)/curvatureStep);n++){
-        //double smoothness=smoothnessMin+m*smoothnessStep;
+        double smoothness=smoothnessMin+m*smoothnessStep;
         double curvature=curvatureMin+n*curvatureStep;
 
         pcl::RegionGrowing<pcl::PointXYZI, pcl::Normal> reg;
@@ -103,9 +103,9 @@ int main(int argc, char *argv[]){
         reg.setNumberOfNeighbours (10);
         reg.setInputCloud (ptsFilteredOutliers.makeShared());
         reg.setInputNormals (normals);
-        //reg.setSmoothnessThreshold (smoothness / 180.0 * M_PI);
+        reg.setSmoothnessThreshold (smoothness / 180.0 * M_PI);
         reg.setCurvatureThreshold (curvature);
-        reg.setSmoothModeFlag(false);
+        reg.setSmoothModeFlag(true);
         reg.setCurvatureTestFlag(true);
         reg.extract (cluster_indices);
         
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]){
         std::string filename = "optimResult.txt";
         std::ofstream outfile;
         outfile.open(filename, std::ios_base::app);
-        outfile <<curvature<<" "<<ratio<<" "<<clusterNb<<std::endl;
+        outfile <<smoothness<<" "<<curvature<<" "<<ratio<<" "<<clusterNb<<std::endl;
     }
-  //}
+  }
 }

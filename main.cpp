@@ -43,7 +43,16 @@ int main(int argc, char *argv[]){
     meanK = std::stoi (argv[8]);
     stddevMulThresh = std::stod (argv[9]);
   }else{
-    std::cout<<"Please specify a file to process"<<std::endl;
+    std::cout<<"Please parameters in the following order:"<<std::endl;
+    std::cout<<"1 - the path to the input ASCII point cloud file"<<std::endl;
+    std::cout<<"2 - the path to the output directory"<<std::endl;
+    std::cout<<"3 - the smoothness tolerance"<<std::endl;
+    std::cout<<"4 - the curvature tolerance"<<std::endl;
+    std::cout<<"5 - the minimum size of a cluster"<<std::endl;
+    std::cout<<"6 - the maximum size of a cluster"<<std::endl;
+    std::cout<<"7 - the minimum height of a cluster (along the Z axis)"<<std::endl;
+    std::cout<<"8 - the number of neighbors to analyze for each point for the outlier filtering"<<std::endl;
+    std::cout<<"9 - the standard deviation multiplier for the outlier filtering"<<std::endl;
     exit(0);
   }
 

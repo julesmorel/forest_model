@@ -9,13 +9,13 @@ This method is a complete pipeline of forest mockups reconstruction from wood/le
 It is made of the following steps:
 1. Filtering of the leaves points.
 2. Outliers removal for an easier clustering.
-3. Clustering of the complete scan to separate the trees.
+3. Clustering of the complete scan to isolate the trees.
 4. Trees mesh model reconstruction
 
 -----------------
 ## Setup
 
-The method relies on [Adtree](https://github.com/tudelft3d/AdTree) to reconstruct 3D trees mesh models from point clouds representing single trees
+The method relies on [Adtree](https://github.com/tudelft3d/AdTree), [TreeQSM](https://github.com/InverseTampere/TreeQSM) or [aRchi](https://github.com/umr-amap/aRchi) to reconstruct 3D trees mesh models from point clouds representing single trees 
 
 ### Requirements
 * Linux (tested on Ubuntu 20.04.4 LTS)
@@ -29,9 +29,9 @@ make
 ```  
 
 -----------------
-## Reconstruction
+## Modeling of forest plots
 
-The method starts by splitting the input point cloud into clusters, each of those clusters corresponding to individual tree. Then it run ADtree in Batch processing mode in order to build a 3D mockup of each individual tree.
+The method starts by splitting the input point cloud into clusters, each of those clusters corresponding to individual tree. Then the user runs one of the proposed methods (AdTree, TreeQSM or aRchi) in order to build a 3D mockup of each individual tree.
 
 ###	Clustering
 
@@ -60,7 +60,20 @@ We usually use:
 ./reconstruction INPUT_FILE OUTPUT_DIR 45. 10. 1000 1000000000 2.0 8 0.5
 ```
 
-###	Adtree
+###	Reconstruction
+
+This package contains 3 reconstruction methods designed to produce 3D mesh models from individual scanned trees.  
+
+**AdTree**
+
+First, compile AdTree by running the following command:
+```bash
+cd AdTree
+mkdir build
+cd build
+cmake ..
+make
+```
 
 Once the input point cloud has been clustered, simply call Adtree in batch mode:
 ```bash
@@ -68,3 +81,32 @@ Once the input point cloud has been clustered, simply call Adtree in batch mode:
 ```
 * INPUT_DIR is the directory where every tree point clouds are stored.
 * OUTPUT_DIR is the directory containing the resulting tree mockups.
+
+**TreeQSM**
+
+To use TreeQSM, call in Matlab the function `run.m` as follow:
+```bash
+run(LIST_OF_FILES,OUTPUT_DIR)
+```
+* LIST_OF_FILES is a glob containing the ASCII files resulting from the clustering
+* OUTPUT_DIR is the directory containing the resulting tree mockups.
+
+For instance, one can run:
+
+```bash
+run("~/GEDI/GEDI008/ascii/*.xyz","~/GEDI/GEDI008/qsm/")
+```
+
+**aRchi**
+
+To use aRchi, run the following command:
+```bash
+Rscript reconstruction.R INPUT_DIR OUTPUT_DIR
+```
+* INPUT_DIR is the directory where every tree point clouds are stored.
+* OUTPUT_DIR is the directory containing the resulting tree mockups.
+
+For instance, one can run:
+```bash
+Rscript reconstruction.R ~/GEDI/GEDI009/trees ~/GEDI/GEDI009/aRchi
+```
