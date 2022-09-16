@@ -3,11 +3,14 @@ library("aRchi")
 
 args = commandArgs(trailingOnly=TRUE)
 
-if (length(args)!=2) {
-  stop("Two arguments must be supplied (input directory and output directory).n", call.=FALSE)
+if (length(args)!=5) {
+  stop("5 arguments must be supplied (input directory and output directory, the distance of research for point neighborhood, the clustering distance and the maximum searching distance for skeleton building.).n", call.=FALSE)
 } else {
    inDir=args[1];
    outDir=args[2];
+   D_=args[3];
+   cl_dist_=args[4];
+   max_d_=args[5];
 }
 
 listInputFiles = list.files(inDir)
@@ -22,7 +25,7 @@ for (file in listInputFiles) {
       points = read.table(input)
       ar = aRchi::build_aRchi()
       ar = aRchi::add_pointcloud(ar,point_cloud = points)
-      ar = skeletonize_pc(ar)
+      ar = skeletonize_pc(ar, D = D_, cl_dist = cl_dist_, max_d = max_d_)
       ar = smooth_skeleton(ar)
       ar =add_radius(ar)
       
@@ -33,9 +36,6 @@ for (file in listInputFiles) {
     },
     error = function(e){ 
       print(e)
-    },
-    warning = function(w){
-      print(w)
     },
     finally = {}
   )

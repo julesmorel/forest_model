@@ -101,12 +101,15 @@ run("~/GEDI/GEDI008/ascii/*.xyz","~/GEDI/GEDI008/qsm/")
 
 To use aRchi, run the following command:
 ```bash
-Rscript reconstruction.R INPUT_DIR OUTPUT_DIR
+Rscript reconstruction.R INPUT_DIR OUTPUT_DIR D CL_DIST MAX_D
 ```
 * INPUT_DIR is the directory where every tree point clouds are stored.
 * OUTPUT_DIR is the directory containing the resulting tree mockups.
+* D is the distance of research for point neighborhood
+* CL_DIST is the clustering distance
+* MAX_D is the maximum searching distance for skeleton building
 
 For instance, one can run:
 ```bash
-Rscript reconstruction.R ~/GEDI/GEDI009/trees ~/GEDI/GEDI009/aRchi
+Rscript reconstruction.R ~/GEDI/GEDI009/trees ~/GEDI/GEDI009/aRchi 0.3 0.1 0.05
 ```
