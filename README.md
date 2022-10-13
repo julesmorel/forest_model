@@ -42,7 +42,7 @@ Some of the clusters may correspond to lower vegetation objects; those clusters 
 To cluster the point cloud, run the following command:
 
 ```bash
-./segment_terrain.sh INPUT_FILE OUTPUT_DIR SOOMTHNESS_TOLERANCE CURVATURE_THRESHOLD MIN_CLUSTER_SIZE MAX_CLUSTER_SIZE MIN_SIZE MEAN_K STD_DEV_MUL_THRESH
+./reconstruction INPUT_FILE OUTPUT_DIR SOOMTHNESS_TOLERANCE CURVATURE_THRESHOLD MIN_CLUSTER_SIZE MAX_CLUSTER_SIZE MIN_SIZE MEAN_K STD_DEV_MUL_THRESH
 ```
 
 Where:
